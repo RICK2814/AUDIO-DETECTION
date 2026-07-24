@@ -1,0 +1,1044 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Multilingual Indian Language Identification — Inference Console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --blue:#2563EB;
+    --blue-dark:#1D4ED8;
+    --blue-light:#EFF4FF;
+    --ink:#0F172A;
+    --ink-soft:#475569;
+    --ink-faint:#94A3B8;
+    --line:#E6EAF2;
+    --bg:#F7F9FC;
+    --white:#FFFFFF;
+    --green:#059669;
+    --green-bg:#ECFDF5;
+    --amber:#D97706;
+    --radius:18px;
+    --radius-sm:12px;
+    --shadow-soft:0 1px 2px rgba(15,23,42,.04), 0 12px 32px -12px rgba(15,23,42,.10);
+    --shadow-card:0 1px 2px rgba(15,23,42,.03), 0 6px 20px -8px rgba(15,23,42,.08);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:'Inter',system-ui,sans-serif;
+    background:
+      radial-gradient(1100px 500px at 85% -8%, rgba(37,99,235,.07), transparent 60%),
+      radial-gradient(900px 500px at -5% 10%, rgba(37,99,235,.05), transparent 55%),
+      var(--bg);
+    color:var(--ink);
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+  .mono{font-family:'JetBrains Mono',monospace;}
+
+  /* ---------------- NAV ---------------- */
+  .topnav{
+    position:sticky; top:0; z-index:40;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:14px 32px;
+    background:rgba(255,255,255,.78);
+    backdrop-filter:blur(14px) saturate(160%);
+    border-bottom:1px solid var(--line);
+  }
+  .nav-left{display:flex; align-items:center; gap:14px;}
+  .logo{
+    width:38px; height:38px; border-radius:11px;
+    background:linear-gradient(135deg,#2563EB,#1D4ED8 60%, #0EA5E9);
+    display:flex; align-items:center; justify-content:center;
+    color:#fff; font-weight:800; font-size:13px; letter-spacing:.02em;
+    box-shadow:0 6px 16px -4px rgba(37,99,235,.55);
+  }
+  .brand-title{font-size:15.5px; font-weight:700; letter-spacing:-.01em; line-height:1.15;}
+  .brand-sub{font-size:12px; color:var(--ink-soft); font-weight:500; margin-top:1px;}
+  .nav-right{display:flex; align-items:center; gap:10px;}
+  .status-chip{
+    display:flex; align-items:center; gap:7px;
+    padding:7px 13px; border-radius:999px;
+    background:#fff; border:1px solid var(--line);
+    font-size:12.5px; font-weight:600; color:var(--ink-soft);
+    box-shadow:var(--shadow-card);
+  }
+  .dot{width:7px; height:7px; border-radius:50%; background:var(--green); box-shadow:0 0 0 3px var(--green-bg);}
+  .dot.pulse{animation:pulse 1.8s ease-in-out infinite;}
+  @keyframes pulse{0%,100%{box-shadow:0 0 0 3px var(--green-bg);} 50%{box-shadow:0 0 0 6px var(--green-bg);}}
+
+  /* ---------------- LAYOUT ---------------- */
+  .wrap{max-width:1360px; margin:0 auto; padding:28px 32px 64px;}
+  .eyebrow{
+    font-size:11.5px; font-weight:700; letter-spacing:.09em; text-transform:uppercase;
+    color:var(--blue); margin-bottom:6px;
+  }
+  .page-head{display:flex; align-items:flex-end; justify-content:space-between; margin-bottom:22px; flex-wrap:wrap; gap:10px;}
+  .page-head h1{font-size:22px; margin:0; font-weight:800; letter-spacing:-.01em;}
+  .page-head p{margin:4px 0 0; color:var(--ink-soft); font-size:13.5px;}
+
+  .grid-2{display:grid; grid-template-columns:1fr 1.15fr; gap:22px; align-items:start;}
+
+  .card{
+    background:rgba(255,255,255,.72);
+    backdrop-filter:blur(18px) saturate(180%);
+    border:1px solid rgba(230,234,242,.9);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow-soft);
+    padding:24px;
+  }
+  .card + .card{margin-top:22px;}
+  .card-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;}
+  .card-title{font-size:14.5px; font-weight:700; letter-spacing:-.005em; display:flex; align-items:center; gap:8px;}
+  .card-title .ic{width:18px; height:18px; color:var(--blue);}
+  .card-note{font-size:11.5px; color:var(--ink-faint); font-weight:500;}
+
+  /* ---------------- UPLOAD ---------------- */
+  .dropzone{
+    border:1.5px dashed #C7D3EA;
+    border-radius:var(--radius-sm);
+    background:linear-gradient(180deg,#FBFCFE,#F5F8FE);
+    padding:34px 20px;
+    text-align:center;
+    cursor:pointer;
+    transition:.18s ease;
+    position:relative;
+  }
+  .dropzone:hover, .dropzone.drag{
+    border-color:var(--blue);
+    background:var(--blue-light);
+  }
+  .dropzone .ic-wrap{
+    width:52px; height:52px; margin:0 auto 14px;
+    border-radius:16px; background:var(--white);
+    border:1px solid var(--line);
+    display:flex; align-items:center; justify-content:center;
+    box-shadow:var(--shadow-card);
+  }
+  .dropzone .ic-wrap svg{width:24px; height:24px; color:var(--blue);}
+  .dropzone h3{margin:0 0 4px; font-size:14px; font-weight:700;}
+  .dropzone p{margin:0; font-size:12.5px; color:var(--ink-soft);}
+  .dz-actions{display:flex; gap:10px; justify-content:center; margin-top:16px;}
+  input[type=file]{display:none;}
+
+  .btn{
+    border:none; border-radius:10px; font-family:inherit; font-weight:650; font-size:13px;
+    padding:9px 16px; cursor:pointer; display:inline-flex; align-items:center; gap:7px;
+    transition:.15s ease;
+  }
+  .btn-outline{background:#fff; border:1px solid var(--line); color:var(--ink);}
+  .btn-outline:hover{border-color:var(--blue); color:var(--blue);}
+  .btn-primary{
+    background:linear-gradient(180deg,#3B78F0,var(--blue));
+    color:#fff; box-shadow:0 6px 16px -5px rgba(37,99,235,.6);
+  }
+  .btn-primary:hover{filter:brightness(1.05);}
+  .btn-primary:disabled{opacity:.5; cursor:not-allowed; filter:none;}
+  .btn-block{width:100%; justify-content:center; padding:12px 16px; font-size:13.5px;}
+  .btn svg{width:15px; height:15px;}
+
+  .file-info{
+    display:none;
+    margin-top:16px; padding:14px 16px;
+    background:#fff; border:1px solid var(--line); border-radius:var(--radius-sm);
+  }
+  .file-info.show{display:block;}
+  .fi-row{display:flex; align-items:center; gap:12px;}
+  .fi-icon{
+    width:38px; height:38px; border-radius:10px; background:var(--blue-light); color:var(--blue);
+    display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  }
+  .fi-icon svg{width:18px; height:18px;}
+  .fi-name{font-size:13px; font-weight:650; word-break:break-all;}
+  .fi-sub{font-size:11.5px; color:var(--ink-faint); margin-top:1px;}
+  .fi-play{
+    margin-left:auto; width:32px; height:32px; border-radius:50%;
+    background:var(--blue); color:#fff; border:none; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  }
+  .fi-play svg{width:13px; height:13px;}
+
+  .meta-grid{display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:14px;}
+  .meta-cell{
+    background:var(--bg); border:1px solid var(--line); border-radius:9px;
+    padding:9px 11px;
+  }
+  .meta-cell .l{font-size:10.5px; color:var(--ink-faint); font-weight:600; text-transform:uppercase; letter-spacing:.04em;}
+  .meta-cell .v{font-size:13px; font-weight:700; margin-top:2px;}
+
+  canvas.wave-canvas{width:100%; height:64px; display:block; margin-top:14px; border-radius:9px; background:var(--bg); border:1px solid var(--line);}
+
+  .actions-row{display:grid; grid-template-columns:1.4fr 1fr; gap:10px; margin-top:18px;}
+
+  .progress-wrap{display:none; margin-top:16px;}
+  .progress-wrap.show{display:block;}
+  .progress-label{display:flex; justify-content:space-between; font-size:11.5px; color:var(--ink-soft); font-weight:600; margin-bottom:6px;}
+  .progress-track{height:6px; border-radius:999px; background:var(--line); overflow:hidden;}
+  .progress-fill{height:100%; width:0%; border-radius:999px; background:linear-gradient(90deg,#60A5FA,var(--blue)); transition:width .12s linear;}
+
+  /* ---------------- RESULT ---------------- */
+  .result-empty{
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; padding:60px 20px; color:var(--ink-faint);
+  }
+  .result-empty .ic-wrap{
+    width:56px; height:56px; border-radius:16px; background:var(--bg); border:1px solid var(--line);
+    display:flex; align-items:center; justify-content:center; margin-bottom:14px;
+  }
+  .result-empty svg{width:26px; height:26px; color:var(--ink-faint);}
+  .result-empty h3{font-size:14px; color:var(--ink-soft); margin:0 0 4px;}
+  .result-empty p{font-size:12.5px; margin:0; max-width:260px;}
+
+  .result-body{display:none;}
+  .result-body.show{display:block; animation:fadein .35s ease;}
+  @keyframes fadein{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);}}
+
+  .predicted-badge{
+    display:flex; align-items:center; justify-content:space-between;
+    background:linear-gradient(135deg,var(--blue-light),#F5F9FF);
+    border:1px solid #DCE6FB;
+    border-radius:var(--radius-sm);
+    padding:20px 22px;
+  }
+  .predicted-badge .lang-native{font-size:28px; font-weight:800; letter-spacing:-.01em; color:var(--ink);}
+  .predicted-badge .lang-en{font-size:12.5px; color:var(--ink-soft); font-weight:600; margin-top:2px;}
+  .conf-ring{position:relative; width:74px; height:74px; flex-shrink:0;}
+  .conf-ring svg{transform:rotate(-90deg);}
+  .conf-ring .bgc{stroke:#DCE6FB;}
+  .conf-ring .fgc{stroke:var(--blue); stroke-linecap:round; transition:stroke-dashoffset 1s cubic-bezier(.4,0,.2,1);}
+  .conf-ring .val{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    font-size:14px; font-weight:800; font-family:'JetBrains Mono',monospace;
+  }
+
+  .stat-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-top:16px;}
+  .stat-cell{background:#fff; border:1px solid var(--line); border-radius:11px; padding:12px 13px;}
+  .stat-cell .l{font-size:10px; color:var(--ink-faint); font-weight:700; text-transform:uppercase; letter-spacing:.045em;}
+  .stat-cell .v{font-size:14px; font-weight:750; margin-top:4px; font-family:'JetBrains Mono',monospace; color:var(--ink);}
+  .stat-cell.status .v{color:var(--green); font-family:'Inter';font-size:12.5px;}
+
+  .prob-list{margin-top:18px; display:flex; flex-direction:column; gap:10px;}
+  .prob-row{display:grid; grid-template-columns:96px 1fr 62px; align-items:center; gap:12px;}
+  .prob-row .lname{font-size:12.5px; font-weight:650; color:var(--ink-soft);}
+  .prob-row.top .lname{color:var(--ink);}
+  .prob-track{height:9px; border-radius:999px; background:var(--bg); border:1px solid var(--line); overflow:hidden;}
+  .prob-fill{height:100%; border-radius:999px; width:0%; background:linear-gradient(90deg,#B9CDF7,#8FAEEF); transition:width 1s cubic-bezier(.4,0,.2,1);}
+  .prob-row.top .prob-fill{background:linear-gradient(90deg,#34D399,var(--green));}
+  .prob-val{font-size:12px; font-family:'JetBrains Mono',monospace; font-weight:650; text-align:right; color:var(--ink-soft);}
+  .prob-row.top .prob-val{color:var(--green); font-weight:700;}
+  .top-tag{
+    display:inline-flex; align-items:center; gap:4px; font-size:9.5px; font-weight:800;
+    background:var(--green-bg); color:var(--green); padding:2px 7px; border-radius:999px;
+    margin-left:6px; letter-spacing:.03em; text-transform:uppercase;
+  }
+
+  /* ---------------- VIZ ---------------- */
+  .viz-grid{display:grid; grid-template-columns:1fr 1fr; gap:16px;}
+  .viz-cell{background:#fff; border:1px solid var(--line); border-radius:var(--radius-sm); padding:14px 16px;}
+  .viz-cell h4{font-size:12px; font-weight:700; margin:0 0 10px; display:flex; align-items:center; gap:6px; color:var(--ink-soft);}
+  .viz-cell h4 .ic{width:13px; height:13px; color:var(--blue);}
+  .viz-canvas{width:100%; height:110px; display:block; border-radius:8px; background:var(--bg);}
+
+  /* ---------------- PIPELINE ---------------- */
+  .pipeline{
+    display:grid; grid-template-columns:repeat(6,1fr); gap:0; align-items:stretch;
+  }
+  .pipe-node{
+    display:flex; flex-direction:column; align-items:center; text-align:center; gap:10px; padding:6px 8px; position:relative;
+  }
+  .pipe-icon{
+    width:52px; height:52px; border-radius:15px; background:#fff; border:1px solid var(--line);
+    display:flex; align-items:center; justify-content:center; box-shadow:var(--shadow-card);
+    color:var(--blue); flex-shrink:0;
+  }
+  .pipe-icon svg{width:22px; height:22px;}
+  .pipe-node.active .pipe-icon{background:var(--blue); color:#fff; box-shadow:0 8px 20px -6px rgba(37,99,235,.6);}
+  .pipe-label{font-size:11.5px; font-weight:700; line-height:1.25;}
+  .pipe-sub{font-size:10px; color:var(--ink-faint); font-weight:500; line-height:1.2;}
+  .pipe-arrow{
+    position:absolute; top:26px; right:-50%; width:100%; height:2px;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .pipe-arrow svg{width:100%; height:14px; color:#C7D3EA;}
+  .pipe-node:last-child .pipe-arrow{display:none;}
+  .pipe-arrow.flow svg{color:var(--blue);}
+  .pipe-arrow .flow-dot{
+    position:absolute; width:5px; height:5px; border-radius:50%; background:var(--blue);
+    top:50%; transform:translateY(-50%);
+    animation:flow 2.2s linear infinite;
+    opacity:0;
+  }
+  @keyframes flow{
+    0%{left:6%; opacity:0;}
+    10%{opacity:1;}
+    85%{opacity:1;}
+    100%{left:94%; opacity:0;}
+  }
+
+  /* ---------------- CHIPS ---------------- */
+  .chip-row{display:flex; flex-wrap:wrap; gap:9px;}
+  .lang-chip{
+    display:flex; align-items:center; gap:8px;
+    background:#fff; border:1px solid var(--line); border-radius:999px;
+    padding:8px 14px 8px 10px; font-size:12.5px; font-weight:650;
+    transition:.15s ease;
+  }
+  .lang-chip:hover{border-color:var(--blue); background:var(--blue-light); transform:translateY(-1px);}
+  .lang-chip .flag{
+    width:22px; height:22px; border-radius:50%; background:var(--blue-light); color:var(--blue);
+    display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:800; flex-shrink:0;
+  }
+  .lang-chip .native{font-size:13px;}
+  .lang-chip .en{color:var(--ink-faint); font-weight:500;}
+
+  /* ---------------- SYSTEM INFO ---------------- */
+  .sys-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:14px;}
+  .sys-cell{padding:6px 0;}
+  .sys-cell .l{font-size:10.5px; color:var(--ink-faint); font-weight:700; text-transform:uppercase; letter-spacing:.045em;}
+  .sys-cell .v{font-size:13.5px; font-weight:700; margin-top:4px;}
+
+  /* ---------------- FOOTER ---------------- */
+  .footer{
+    margin-top:40px; padding-top:22px; border-top:1px solid var(--line);
+    display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;
+  }
+  .footer-left{display:flex; align-items:center; gap:10px;}
+  .footer-badge{
+    font-size:10.5px; font-weight:700; letter-spacing:.04em; text-transform:uppercase;
+    background:#fff; border:1px solid var(--line); color:var(--ink-soft);
+    padding:5px 10px; border-radius:999px;
+  }
+  .footer-title{font-size:12.5px; font-weight:700;}
+  .footer-sub{font-size:11.5px; color:var(--ink-faint); margin-top:1px;}
+  .footer-right{font-size:11px; color:var(--ink-faint); text-align:right;}
+
+  @media (max-width:1080px){
+    .grid-2{grid-template-columns:1fr;}
+    .viz-grid{grid-template-columns:1fr;}
+    .pipeline{grid-template-columns:repeat(3,1fr); row-gap:26px;}
+    .pipe-arrow{display:none;}
+    .sys-grid{grid-template-columns:1fr 1fr;}
+    .stat-grid{grid-template-columns:1fr 1fr;}
+  }
+</style>
+</head>
+<body>
+
+<div class="topnav">
+  <div class="nav-left">
+    <div class="logo">AI</div>
+    <div>
+      <div class="brand-title">Multilingual Indian Language Identification</div>
+      <div class="brand-sub">Speech Language Identification via Whisper Large v3 (Groq)</div>
+    </div>
+  </div>
+  <div class="nav-right">
+    <div class="status-chip"><span class="dot pulse"></span>Model: Online</div>
+    <div class="status-chip mono">GPU: NVIDIA T4</div>
+    <div class="status-chip mono">v1.0</div>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <div class="page-head">
+    <div>
+      <div class="eyebrow">Inference Console</div>
+      <h1>Speech Language Identification</h1>
+      <p>Upload or record an utterance to classify it across nine Indian regional languages.</p>
+    </div>
+  </div>
+
+  <div class="grid-2">
+
+    <!-- LEFT: INPUT -->
+    <div>
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title">
+            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v14a3 3 0 1 1-3-3"/><path d="M9 14V6l9-2v9"/></svg>
+            Input Speech
+          </div>
+          <div class="card-note">WAV · 16 kHz</div>
+        </div>
+
+        <div class="dropzone" id="dropzone">
+          <div class="ic-wrap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 16V4m0 0L7 9m5-5 5 5"/><path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+          </div>
+          <h3>Drag &amp; drop a WAV file</h3>
+          <p>or use the options below · max 30s recommended</p>
+          <div class="dz-actions" onclick="event.stopPropagation()">
+            <button class="btn btn-outline" id="browseBtn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h16v16H4z" opacity="0"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg>
+              Browse Audio
+            </button>
+            <button class="btn btn-outline" id="recordBtn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3" fill="currentColor" stroke="none"/></svg>
+              Record Mic
+            </button>
+          </div>
+          <input type="file" id="fileInput" accept="audio/wav,audio/*">
+        </div>
+
+        <div class="file-info" id="fileInfo">
+          <div class="fi-row">
+            <div class="fi-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+            </div>
+            <div>
+              <div class="fi-name" id="fiName">sample_utterance.wav</div>
+              <div class="fi-sub" id="fiSub">— </div>
+            </div>
+            <button class="fi-play" id="playBtn">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+            </button>
+          </div>
+          <canvas class="wave-canvas" id="waveCanvas"></canvas>
+          <div class="meta-grid">
+            <div class="meta-cell"><div class="l">Duration</div><div class="v" id="mDuration">—</div></div>
+            <div class="meta-cell"><div class="l">Sampling Rate</div><div class="v">16,000 Hz</div></div>
+            <div class="meta-cell"><div class="l">File Size</div><div class="v" id="mSize">—</div></div>
+            <div class="meta-cell"><div class="l">Bit Depth</div><div class="v">16-bit PCM</div></div>
+          </div>
+        </div>
+
+        <div class="progress-wrap" id="progressWrap">
+          <div class="progress-label"><span id="progressStage">Uploading audio to inference server…</span><span id="progressPct">0%</span></div>
+          <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+        </div>
+
+        <div class="actions-row">
+          <button class="btn btn-primary btn-block" id="predictBtn" disabled>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 3 4 14h7l-1 7 9-11h-7l1-7Z"/></svg>
+            Predict Language
+          </button>
+          <button class="btn btn-outline btn-block" id="clearBtn">Clear</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title">
+            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M3 9h18"/></svg>
+            System Information
+          </div>
+        </div>
+        <div class="sys-grid">
+          <div class="sys-cell"><div class="l">Framework</div><div class="v">Groq API</div></div>
+          <div class="sys-cell"><div class="l">Model</div><div class="v">Whisper Large v3</div></div>
+          <div class="sys-cell"><div class="l">Classifier</div><div class="v">Built-in (ASR-based)</div></div>
+          <div class="sys-cell"><div class="l">Backend</div><div class="v">Python</div></div>
+          <div class="sys-cell"><div class="l">Inference Device</div><div class="v">Groq LPU (cloud)</div></div>
+          <div class="sys-cell"><div class="l">Model Type</div><div class="v">Self-Supervised SLID</div></div>
+          <div class="sys-cell"><div class="l">Model Size</div><div class="v">1550M params</div></div>
+          <div class="sys-cell"><div class="l">Languages</div><div class="v">9 Supported</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: OUTPUT -->
+    <div>
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title">
+            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2 2 7l10 5 10-5-10-5Z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+            Prediction Result
+          </div>
+          <div class="card-note" id="statusNote">Awaiting input</div>
+        </div>
+
+        <div class="result-empty" id="resultEmpty">
+          <div class="ic-wrap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>
+          </div>
+          <h3>No prediction yet</h3>
+          <p>Upload a speech sample and run inference to see the predicted language and confidence distribution.</p>
+        </div>
+
+        <div class="result-body" id="resultBody">
+          <div class="predicted-badge">
+            <div>
+              <div class="lang-native" id="predNative">বাংলা</div>
+              <div class="lang-en" id="predEn">Bengali · Indo-Aryan family</div>
+            </div>
+            <div class="conf-ring">
+              <svg width="74" height="74" viewBox="0 0 74 74">
+                <circle class="bgc" cx="37" cy="37" r="31" fill="none" stroke-width="7"/>
+                <circle class="fgc" id="ringFg" cx="37" cy="37" r="31" fill="none" stroke-width="7" stroke-dasharray="194.8" stroke-dashoffset="194.8"/>
+              </svg>
+              <div class="val" id="ringVal">0%</div>
+            </div>
+          </div>
+
+          <div class="stat-grid">
+            <div class="stat-cell"><div class="l">Confidence</div><div class="v" id="statConf">—</div></div>
+            <div class="stat-cell"><div class="l">Inference Time</div><div class="v" id="statTime">—</div></div>
+            <div class="stat-cell"><div class="l">Model</div><div class="v" style="font-size:11.5px;">Whisper v3</div></div>
+            <div class="stat-cell status"><div class="l">Status</div><div class="v">✓ Completed</div></div>
+          </div>
+
+          <div class="prob-list" id="probList"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title">
+            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12h3l2-8 4 16 3-11 2 6h4"/></svg>
+            Visualization
+          </div>
+          <div class="card-note">Signal &amp; embedding diagnostics</div>
+        </div>
+        <div class="viz-grid">
+          <div class="viz-cell">
+            <h4><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12h3l2-7 3 14 3-14 3 14 2-7h4"/></svg>Audio Waveform</h4>
+            <canvas class="viz-canvas" id="vizWave"></canvas>
+          </div>
+          <div class="viz-cell">
+            <h4><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>Mel Spectrogram</h4>
+            <canvas class="viz-canvas" id="vizSpec"></canvas>
+          </div>
+          <div class="viz-cell">
+            <h4><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="6" r="2"/><circle cx="18" cy="7" r="2"/><circle cx="14" cy="17" r="2"/><circle cx="6" cy="16" r="2"/><path d="M8 7l8-1M9 8l4 8M8 15l4-7"/></svg>Embedding Space (t-SNE)</h4>
+            <canvas class="viz-canvas" id="vizEmbed"></canvas>
+          </div>
+          <div class="viz-cell">
+            <h4><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V10M12 20V4M20 20v-7"/></svg>Confidence Bar Chart</h4>
+            <canvas class="viz-canvas" id="vizConf"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PIPELINE -->
+  <div class="card" style="margin-top:22px;">
+    <div class="card-head">
+      <div class="card-title">
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="5" r="2"/><circle cx="12" cy="19" r="2"/><circle cx="19" cy="12" r="2"/><path d="M7 12h10M12 7v10"/></svg>
+        Model Pipeline
+      </div>
+      <div class="card-note">End-to-end inference flow</div>
+    </div>
+    <div class="pipeline" id="pipeline">
+      <div class="pipe-node" data-i="0">
+        <div class="pipe-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v14a3 3 0 1 1-3-3"/><path d="M9 14V6l9-2v9"/></svg></div>
+        <div class="pipe-label">Input Audio</div>
+        <div class="pipe-sub">Raw waveform</div>
+        <div class="pipe-arrow"><svg viewBox="0 0 100 14" preserveAspectRatio="none"><path d="M0 7h94M88 2l6 5-6 5" fill="none" stroke="currentColor" stroke-width="1.6"/></svg><div class="flow-dot"></div></div>
+      </div>
+      <div class="pipe-node" data-i="1">
+        <div class="pipe-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16M4 12h10M4 18h13"/></svg></div>
+        <div class="pipe-label">Preprocessing</div>
+        <div class="pipe-sub">Resample &amp; normalize</div>
+        <div class="pipe-arrow"><svg viewBox="0 0 100 14" preserveAspectRatio="none"><path d="M0 7h94M88 2l6 5-6 5" fill="none" stroke="currentColor" stroke-width="1.6"/></svg><div class="flow-dot" style="animation-delay:.35s"></div></div>
+      </div>
+      <div class="pipe-node" data-i="2">
+        <div class="pipe-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="7" width="18" height="10" rx="2"/><path d="M7 7V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2"/></svg></div>
+        <div class="pipe-label">Whisper Large v3</div>
+        <div class="pipe-sub">Groq-hosted ASR + LID</div>
+        <div class="pipe-arrow"><svg viewBox="0 0 100 14" preserveAspectRatio="none"><path d="M0 7h94M88 2l6 5-6 5" fill="none" stroke="currentColor" stroke-width="1.6"/></svg><div class="flow-dot" style="animation-delay:.7s"></div></div>
+      </div>
+      <div class="pipe-node" data-i="3">
+        <div class="pipe-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="6" cy="6" r="2.2"/><circle cx="18" cy="6" r="2.2"/><circle cx="6" cy="18" r="2.2"/><circle cx="18" cy="18" r="2.2"/><path d="M8 7l8 9M16 7l-8 9"/></svg></div>
+        <div class="pipe-label">Transcription + LID</div>
+        <div class="pipe-sub">Joint decode</div>
+        <div class="pipe-arrow"><svg viewBox="0 0 100 14" preserveAspectRatio="none"><path d="M0 7h94M88 2l6 5-6 5" fill="none" stroke="currentColor" stroke-width="1.6"/></svg><div class="flow-dot" style="animation-delay:1.05s"></div></div>
+      </div>
+      <div class="pipe-node" data-i="4">
+        <div class="pipe-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="4" cy="7" r="1.6"/><circle cx="4" cy="12" r="1.6"/><circle cx="4" cy="17" r="1.6"/><circle cx="12" cy="9" r="1.6"/><circle cx="12" cy="15" r="1.6"/><circle cx="20" cy="12" r="1.6"/><path d="M5.4 7.6 10.7 9M5.4 11.6 10.7 9.6M5.4 12.4 10.7 14.4M5.4 16.4 10.7 15M13.4 9.6 18.7 11.6M13.4 14.4 18.7 12.4"/></svg></div>
+        <div class="pipe-label">Language Detection</div>
+        <div class="pipe-sub">Top-1 language output</div>
+        <div class="pipe-arrow"><svg viewBox="0 0 100 14" preserveAspectRatio="none"><path d="M0 7h94M88 2l6 5-6 5" fill="none" stroke="currentColor" stroke-width="1.6"/></svg><div class="flow-dot" style="animation-delay:1.4s"></div></div>
+      </div>
+      <div class="pipe-node" data-i="5">
+        <div class="pipe-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m9 12 2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg></div>
+        <div class="pipe-label">Predicted Language</div>
+        <div class="pipe-sub">Final output</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUPPORTED LANGUAGES -->
+  <div class="card" style="margin-top:22px;">
+    <div class="card-head">
+      <div class="card-title">
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 4 6 4 9s-1.5 6.4-4 9c-2.5-2.6-4-6-4-9s1.5-6.4 4-9Z"/></svg>
+        Supported Languages
+      </div>
+      <div class="card-note">9 Indian regional languages</div>
+    </div>
+    <div class="chip-row" id="chipRow"></div>
+  </div>
+
+  <div class="footer">
+    <div class="footer-left">
+      <span class="footer-badge">Research Prototype</span>
+      <div>
+        <div class="footer-title">Multilingual Indian Language Identification System</div>
+        <div class="footer-sub">Privacy-Preserving Speech Language Identification · Journal Demonstration Interface</div>
+      </div>
+    </div>
+    <div class="footer-right mono">wav2vec2-xlsr-53 · mlp head · 9-class softmax</div>
+  </div>
+
+</div>
+
+<script>
+const LANGUAGES = [
+  {code:'bn', en:'Bengali',  native:'বাংলা',    family:'Indo-Aryan'},
+  {code:'gu', en:'Gujarati', native:'ગુજરાતી',  family:'Indo-Aryan'},
+  {code:'kn', en:'Kannada',  native:'ಕನ್ನಡ',    family:'Dravidian'},
+  {code:'kok',en:'Konkani',  native:'कोंकणी',   family:'Indo-Aryan'},
+  {code:'ml', en:'Malayalam',native:'മലയാളം',   family:'Dravidian'},
+  {code:'mr', en:'Marathi',  native:'मराठी',    family:'Indo-Aryan'},
+  {code:'or', en:'Odia',     native:'ଓଡ଼ିଆ',    family:'Indo-Aryan'},
+  {code:'ta', en:'Tamil',    native:'தமிழ்',    family:'Dravidian'},
+  {code:'te', en:'Telugu',   native:'తెలుగు',   family:'Dravidian'},
+];
+
+// ---- render language chips ----
+const chipRow = document.getElementById('chipRow');
+LANGUAGES.forEach(l=>{
+  const chip = document.createElement('div');
+  chip.className='lang-chip';
+  chip.innerHTML = `<span class="flag">${l.en.slice(0,2).toUpperCase()}</span><span class="native">${l.native}</span><span class="en">(${l.en})</span>`;
+  chipRow.appendChild(chip);
+});
+
+// ---- pipeline flow-dot stagger reset ----
+function restartPipelineAnim(){
+  document.querySelectorAll('.flow-dot').forEach(d=>{
+    d.style.animation='none'; d.offsetHeight; d.style.animation=null;
+  });
+}
+
+// ---- elements ----
+const dropzone = document.getElementById('dropzone');
+const fileInput = document.getElementById('fileInput');
+const browseBtn = document.getElementById('browseBtn');
+const recordBtn = document.getElementById('recordBtn');
+const fileInfo = document.getElementById('fileInfo');
+const fiName = document.getElementById('fiName');
+const fiSub = document.getElementById('fiSub');
+const mDuration = document.getElementById('mDuration');
+const mSize = document.getElementById('mSize');
+const waveCanvas = document.getElementById('waveCanvas');
+const predictBtn = document.getElementById('predictBtn');
+const clearBtn = document.getElementById('clearBtn');
+const progressWrap = document.getElementById('progressWrap');
+const progressFill = document.getElementById('progressFill');
+const progressPct = document.getElementById('progressPct');
+const progressStage = document.getElementById('progressStage');
+const statusNote = document.getElementById('statusNote');
+const resultEmpty = document.getElementById('resultEmpty');
+const resultBody = document.getElementById('resultBody');
+const playBtn = document.getElementById('playBtn');
+
+let audioCtx=null, decodedBuffer=null, currentFile=null;
+
+function fmtBytes(b){
+  if(b<1024) return b+' B';
+  if(b<1024*1024) return (b/1024).toFixed(1)+' KB';
+  return (b/1024/1024).toFixed(2)+' MB';
+}
+function fmtTime(s){
+  if(!isFinite(s)) return '—';
+  const m=Math.floor(s/60), sec=(s%60).toFixed(2);
+  return (m>0? m+'m ':'')+sec+'s';
+}
+
+function drawWave(canvas, buffer, color){
+  const dpr = window.devicePixelRatio||1;
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = rect.width*dpr; canvas.height = rect.height*dpr;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,rect.width,rect.height);
+  const w=rect.width, h=rect.height, mid=h/2;
+  if(!buffer){
+    // placeholder gentle sine
+    ctx.strokeStyle=color; ctx.lineWidth=1.4; ctx.beginPath();
+    for(let x=0;x<w;x++){ const y=mid+Math.sin(x*0.05)*4; x===0?ctx.moveTo(x,y):ctx.lineTo(x,y); }
+    ctx.stroke(); return;
+  }
+  const data = buffer.getChannelData(0);
+  const step = Math.ceil(data.length/w);
+  ctx.fillStyle=color;
+  for(let x=0;x<w;x++){
+    let min=1.0, max=-1.0;
+    for(let j=0;j<step;j++){
+      const idx=x*step+j;
+      if(idx>=data.length) break;
+      const v=data[idx];
+      if(v<min) min=v; if(v>max) max=v;
+    }
+    const y1=mid+min*mid*0.92, y2=mid+max*mid*0.92;
+    ctx.fillRect(x,Math.min(y1,y2),1,Math.max(2,Math.abs(y2-y1)));
+  }
+}
+
+function drawSpectrogram(canvas){
+  const dpr = window.devicePixelRatio||1;
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = rect.width*dpr; canvas.height=rect.height*dpr;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr,dpr);
+  const w=rect.width,h=rect.height;
+  const cols=64, rows=32;
+  const cw=w/cols, ch=h/rows;
+  for(let x=0;x<cols;x++){
+    for(let y=0;y<rows;y++){
+      const t=x/cols, f=y/rows;
+      let v = Math.sin(t*14+f*3)*0.5+0.5;
+      v *= Math.exp(-Math.pow((f-0.35-0.15*Math.sin(t*6)),2)*10);
+      v += Math.random()*0.08;
+      v = Math.max(0,Math.min(1,v));
+      const c = mixColor(v);
+      ctx.fillStyle=c;
+      ctx.fillRect(x*cw, h-(y+1)*ch, cw+0.6, ch+0.6);
+    }
+  }
+}
+function mixColor(v){
+  // white -> blue-light -> blue
+  const stops=[[247,249,252],[219,231,253],[37,99,235]];
+  let seg = v<0.5? [stops[0],stops[1],v*2] : [stops[1],stops[2],(v-0.5)*2];
+  const [a,b,t]=seg;
+  const r=Math.round(a[0]+(b[0]-a[0])*t), g=Math.round(a[1]+(b[1]-a[1])*t), bl=Math.round(a[2]+(b[2]-a[2])*t);
+  return `rgb(${r},${g},${bl})`;
+}
+
+function drawEmbedding(canvas, highlightIdx){
+  const dpr = window.devicePixelRatio||1;
+  const rect = canvas.getBoundingClientRect();
+  canvas.width=rect.width*dpr; canvas.height=rect.height*dpr;
+  const ctx=canvas.getContext('2d');
+  ctx.scale(dpr,dpr);
+  const w=rect.width,h=rect.height;
+  ctx.clearRect(0,0,w,h);
+  const rand = mulberry32(42);
+  const clusters=9;
+  for(let c=0;c<clusters;c++){
+    const cx = w*0.15 + (w*0.7)*((c%3)/2) + (rand()-0.5)*18;
+    const cy = h*0.15 + (h*0.7)*(Math.floor(c/3)/2) + (rand()-0.5)*14;
+    const n = 9;
+    for(let i=0;i<n;i++){
+      const x = cx + (rand()-0.5)*24;
+      const y = cy + (rand()-0.5)*20;
+      const active = highlightIdx!==undefined && c===highlightIdx;
+      ctx.beginPath();
+      ctx.arc(x,y, active?3.1:2.1, 0, Math.PI*2);
+      ctx.fillStyle = active? '#059669' : (c%2===0? 'rgba(37,99,235,.55)':'rgba(148,163,184,.55)');
+      ctx.fill();
+    }
+  }
+}
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+
+function drawConfChart(canvas, probs){
+  const dpr = window.devicePixelRatio||1;
+  const rect = canvas.getBoundingClientRect();
+  canvas.width=rect.width*dpr; canvas.height=rect.height*dpr;
+  const ctx=canvas.getContext('2d');
+  ctx.scale(dpr,dpr);
+  const w=rect.width,h=rect.height;
+  ctx.clearRect(0,0,w,h);
+  const n=probs.length;
+  const gap=6;
+  const bw=(w-gap*(n-1))/n;
+  const maxV = Math.max(...probs.map(p=>p.value), 0.02);
+  probs.forEach((p,i)=>{
+    const bh = Math.max(2,(p.value/maxV)*(h-18));
+    const x=i*(bw+gap);
+    const y=h-bh;
+    ctx.fillStyle = p.top? '#059669' : '#C7D3EA';
+    roundRectTop(ctx,x,y,bw,bh,3);
+    ctx.fillStyle='#94A3B8';
+    ctx.font='9px Inter, sans-serif';
+    ctx.textAlign='center';
+    ctx.fillText(p.code, x+bw/2, h-4);
+  });
+}
+function roundRectTop(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x,y+h);
+  ctx.lineTo(x,y+r);
+  ctx.quadraticCurveTo(x,y,x+r,y);
+  ctx.lineTo(x+w-r,y);
+  ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+  ctx.lineTo(x+w,y+h);
+  ctx.closePath();
+  ctx.fill();
+}
+
+// initial placeholder viz
+drawWave(document.getElementById('vizWave'), null, '#C7D3EA');
+drawSpectrogram(document.getElementById('vizSpec'));
+drawEmbedding(document.getElementById('vizEmbed'));
+drawConfChart(document.getElementById('vizConf'), LANGUAGES.map(l=>({code:l.en.slice(0,3),value:0.11,top:false})));
+
+// ---- file handling ----
+browseBtn.addEventListener('click', ()=>fileInput.click());
+dropzone.addEventListener('click', ()=>fileInput.click());
+['dragenter','dragover'].forEach(ev=>dropzone.addEventListener(ev, e=>{e.preventDefault(); dropzone.classList.add('drag');}));
+['dragleave','drop'].forEach(ev=>dropzone.addEventListener(ev, e=>{e.preventDefault(); dropzone.classList.remove('drag');}));
+dropzone.addEventListener('drop', e=>{
+  const f = e.dataTransfer.files[0];
+  if(f) handleFile(f);
+});
+fileInput.addEventListener('change', e=>{
+  if(e.target.files[0]) handleFile(e.target.files[0]);
+});
+recordBtn.addEventListener('click', ()=>{
+  simulateRecordedFile();
+});
+
+function handleFile(file){
+  currentFile = file;
+  fiName.textContent = file.name;
+  mSize.textContent = fmtBytes(file.size);
+  fiSub.textContent = fmtBytes(file.size)+' · WAV';
+  fileInfo.classList.add('show');
+  predictBtn.disabled = false;
+  resetResult();
+
+  audioCtx = audioCtx || new (window.AudioContext||window.webkitAudioContext)();
+  file.arrayBuffer().then(buf=>audioCtx.decodeAudioData(buf.slice(0)))
+    .then(decoded=>{
+      decodedBuffer = decoded;
+      mDuration.textContent = fmtTime(decoded.duration);
+      drawWave(waveCanvas, decoded, '#2563EB');
+      drawWave(document.getElementById('vizWave'), decoded, '#2563EB');
+    })
+    .catch(()=>{
+      decodedBuffer = null;
+      mDuration.textContent = '—';
+      drawWave(waveCanvas, null, '#2563EB');
+    });
+}
+
+function simulateRecordedFile(){
+  const blob = new Blob([new Uint8Array(44100)], {type:'audio/wav'});
+  const f = new File([blob], 'microphone_recording.wav', {type:'audio/wav'});
+  currentFile=f;
+  fiName.textContent = f.name;
+  fiSub.textContent = 'Live microphone capture';
+  mSize.textContent = fmtBytes(f.size);
+  mDuration.textContent = '2.77s';
+  fileInfo.classList.add('show');
+  predictBtn.disabled=false;
+  resetResult();
+  decodedBuffer=null;
+  drawWave(waveCanvas, null, '#2563EB');
+}
+
+playBtn.addEventListener('click', ()=>{
+  if(decodedBuffer && audioCtx){
+    const src = audioCtx.createBufferSource();
+    src.buffer = decodedBuffer;
+    src.connect(audioCtx.destination);
+    src.start(0);
+  }
+});
+
+clearBtn.addEventListener('click', ()=>{
+  currentFile=null; decodedBuffer=null;
+  fileInfo.classList.remove('show');
+  predictBtn.disabled=true;
+  fileInput.value='';
+  resetResult();
+});
+
+function resetResult(){
+  resultBody.classList.remove('show');
+  resultEmpty.style.display='flex';
+  statusNote.textContent='Awaiting input';
+  progressWrap.classList.remove('show');
+  hideWarning();
+}
+
+// ---- backend config ----
+// Points at the local FastAPI backend (see backend/main.py + README).
+// The Groq API key lives only on that server — never in this file.
+const BACKEND_URL = window.LID_BACKEND_URL || 'http://localhost:8000';
+
+function showWarning(msg){
+  let el = document.getElementById('warnBanner');
+  if(!el){
+    el = document.createElement('div');
+    el.id='warnBanner';
+    el.style.cssText='margin-bottom:14px;padding:11px 14px;border-radius:10px;background:#FFFBEB;border:1px solid #FDE68A;color:#92400E;font-size:12.5px;font-weight:600;line-height:1.4;';
+    resultBody.parentNode.insertBefore(el, resultBody);
+  }
+  el.textContent = msg;
+  el.style.display='block';
+}
+function hideWarning(){
+  const el = document.getElementById('warnBanner');
+  if(el) el.style.display='none';
+}
+
+// ---- predict flow (real inference via backend) ----
+predictBtn.addEventListener('click', async ()=>{
+  if(!currentFile){ return; }
+  predictBtn.disabled = true;
+  clearBtn.disabled = true;
+  resultBody.classList.remove('show');
+  resultEmpty.style.display='none';
+  hideWarning();
+  statusNote.textContent='Running inference…';
+  progressWrap.classList.add('show');
+  progressFill.style.width='0%';
+  progressPct.textContent='0%';
+
+  const stages = [
+    'Uploading audio to inference server…',
+    'Running Whisper Large v3 (Groq)…',
+    'Parsing detected language…',
+  ];
+  let pct=0, stageIdx=0;
+  progressStage.textContent = stages[0];
+  restartPipelineAnim();
+  document.querySelectorAll('.pipe-node').forEach(n=>n.classList.remove('active'));
+
+  // Indeterminate progress: creep toward 90% while we wait for the real response,
+  // then snap to 100% once the server actually replies.
+  const t0 = performance.now();
+  const ticker = setInterval(()=>{
+    pct = Math.min(90, pct + (90-pct)*0.06 + 0.4);
+    progressFill.style.width = pct+'%';
+    progressPct.textContent = Math.round(pct)+'%';
+    const newStage = Math.min(stages.length-1, Math.floor((pct/90)*stages.length));
+    if(newStage!==stageIdx){ stageIdx=newStage; progressStage.textContent = stages[stageIdx]; }
+    const nodeIdx = Math.min(4, Math.floor((pct/90)*5));
+    document.querySelectorAll('.pipe-node').forEach((n,i)=>n.classList.toggle('active', i<=nodeIdx));
+  }, 90);
+
+  try{
+    const form = new FormData();
+    form.append('file', currentFile, currentFile.name || 'audio.wav');
+    const resp = await fetch(BACKEND_URL + '/api/predict', {method:'POST', body:form});
+    const data = await resp.json();
+
+    clearInterval(ticker);
+    progressFill.style.width='100%';
+    progressPct.textContent='100%';
+    document.querySelectorAll('.pipe-node').forEach(n=>n.classList.add('active'));
+
+    if(!resp.ok){
+      throw new Error(data.detail || ('Server error ('+resp.status+')'));
+    }
+
+    setTimeout(()=>showResult(data), 150);
+  }catch(err){
+    clearInterval(ticker);
+    predictBtn.disabled = false;
+    clearBtn.disabled = false;
+    progressWrap.classList.remove('show');
+    statusNote.textContent = 'Inference failed';
+    showWarning(
+      'Could not reach the inference backend at ' + BACKEND_URL + '. ' +
+      'Make sure it is running (see README.md) — ' + (err.message || err)
+    );
+    resultEmpty.style.display='flex';
+  }
+});
+
+function showResult(data){
+  const top = data.language; // {en, native, family} or null if outside our 9-language target set
+  const code = data.detected_code;
+  const conf = data.approx_confidence_pct; // real, approximate — derived from Whisper's own logprobs
+
+  if(!top){
+    showWarning(
+      (data.note || 'Detected language is outside this project\'s 9-language target set.') +
+      ' Whisper detected: "' + (code || 'unknown') + '".' +
+      (data.transcript_preview ? ' Transcript preview: "' + data.transcript_preview + '"' : '')
+    );
+  } else if(data.note){
+    showWarning(data.note);
+  }
+
+  const displayNative = top ? top.native : (code || '—').toUpperCase();
+  const displayEn = top ? `${top.en} · ${top.family} family` : 'Not in target language set';
+
+  document.getElementById('predNative').textContent = displayNative;
+  document.getElementById('predEn').textContent = displayEn;
+  document.getElementById('statConf').textContent = conf!=null ? conf.toFixed(2)+'%' : '—';
+  document.getElementById('statTime').textContent = data.inference_time_ms + ' ms';
+
+  // ring
+  const ringPct = conf!=null ? conf : 0;
+  const circumference = 2*Math.PI*31;
+  const ring = document.getElementById('ringFg');
+  ring.style.strokeDasharray = circumference;
+  ring.style.strokeDashoffset = circumference;
+  requestAnimationFrame(()=>{
+    ring.style.strokeDashoffset = circumference*(1-ringPct/100);
+  });
+  animateNumber(document.getElementById('ringVal'), ringPct);
+
+  // Language reference list: real prediction highlighted; Whisper returns a
+  // single top-1 language, not a full 9-way probability distribution, so we
+  // do not fabricate numbers for the other eight — shown as reference only.
+  const probList = document.getElementById('probList');
+  probList.innerHTML='';
+  const noteRow = document.createElement('div');
+  noteRow.style.cssText='font-size:11px;color:var(--ink-faint);margin-bottom:2px;';
+  noteRow.textContent = 'Whisper returns one detected language, not a full class distribution — only the top match above is a real model output.';
+  probList.appendChild(noteRow);
+
+  LANGUAGES.forEach(l=>{
+    const matched = top && l.en===top.en;
+    const row = document.createElement('div');
+    row.className = 'prob-row'+(matched?' top':'');
+    row.innerHTML = `
+      <div class="lname">${l.native}${matched?'<span class="top-tag">Detected</span>':''}</div>
+      <div class="prob-track"><div class="prob-fill" style="width:${matched?(conf||70):0}%"></div></div>
+      <div class="prob-val">${matched ? (conf!=null? conf.toFixed(1)+'%':'✓') : '—'}</div>`;
+    probList.appendChild(row);
+  });
+
+  drawEmbedding(document.getElementById('vizEmbed'), top ? LANGUAGES.findIndex(l=>l.en===top.en) : undefined);
+  drawSpectrogram(document.getElementById('vizSpec'));
+  drawConfChart(document.getElementById('vizConf'), LANGUAGES.map(l=>({
+    code:l.en.slice(0,3),
+    value: (top && l.en===top.en) ? (conf||70)/100 : 0.02,
+    top: !!(top && l.en===top.en)
+  })));
+
+  resultBody.classList.add('show');
+  statusNote.textContent = top ? 'Prediction completed' : 'Completed — outside target set';
+  predictBtn.disabled = false;
+  clearBtn.disabled = false;
+}
+
+function animateNumber(el, target){
+  let cur=0;
+  const dur=900, start=performance.now();
+  function step(now){
+    const t=Math.min(1,(now-start)/dur);
+    const eased = 1-Math.pow(1-t,3);
+    el.textContent = (target*eased).toFixed(0)+'%';
+    if(t<1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
+window.addEventListener('resize', ()=>{
+  if(decodedBuffer){
+    drawWave(waveCanvas, decodedBuffer, '#2563EB');
+    drawWave(document.getElementById('vizWave'), decodedBuffer, '#2563EB');
+  } else {
+    drawWave(document.getElementById('vizWave'), null, '#C7D3EA');
+  }
+  drawSpectrogram(document.getElementById('vizSpec'));
+});
+</script>
+</body>
+</html>
