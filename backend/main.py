@@ -19,9 +19,14 @@ import httpx
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from dotenv import load_dotenv
+
+# Load environment variables from a local .env file
+load_dotenv()
 
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
 GROQ_TRANSCRIBE_URL = "https://api.groq.com/openai/v1/audio/transcriptions"
+
 
 app = FastAPI(title="LID Inference Backend")
 
